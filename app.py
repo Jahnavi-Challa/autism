@@ -27,11 +27,24 @@ def load_data():
     download_data()
     data = pd.read_csv("autism_data.csv")
     data.dropna(inplace=True)
+    
+    # Convert categorical data if present
+    for col in data.columns:
+        if data[col].dtype == 'object' and col != 'Class/ASD':  # Avoid modifying target variable
+            data[col] = pd.factorize(data[col])[0]  # Convert categorical to numeric
+    
+    # Ensure the target variable exists
+    if 'Class/ASD' not in data.columns:
+        raise KeyError(f"Expected column 'Class/ASD' not found in dataset. Available columns: {data.columns}")
+    
     data_classes = data['Class/ASD'].apply(lambda x: 1 if x == 'YES' else 0)
     features = data.drop(columns=['Class/ASD'])
+    
     scaler = MinMaxScaler()
     features = pd.DataFrame(scaler.fit_transform(features), columns=features.columns)
+    
     return features, data_classes
+
 
 def train_models(X_train, y_train, X_test, y_test):
     """Train different models and return the best one."""
